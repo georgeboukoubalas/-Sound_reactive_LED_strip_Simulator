@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WS2812B LED Strip Simulator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1a1a;
+      color: #ccc;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container { width: 100%; max-width: 820px; }
+
+    h1 {
+      font-size: 16px;
+      font-weight: normal;
+      color: #888;
+      margin-bottom: 6px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .subtitle { font-size: 12px; color: #555; margin-bottom: 20px; letter-spacing: 0.06em; }
+
+    .strip-container {
+      background: #0d0d0d;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 16px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+    }
+
+    .pixel {
+      width: 12px;
+      height: 36px;
+      border-radius: 3px;
+      background: #1a1a1a;
+      transition: background 0.15s ease;
+    }
+
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+
+    .btn {
+      padding: 10px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover  { opacity: 0.88; }
+    .btn:active { transform: scale(0.96); opacity: 0.75; }
+
+    .btn-red     { background: #e24b4a; color: #fff; }
+    .btn-green   { background: #3a9e3a; color: #fff; }
+    .btn-blue    { background: #378add; color: #fff; }
+    .btn-rainbow { background: linear-gradient(90deg,#e24b4a,#ef9f27,#3a9e3a,#378add,#7f77dd,#d4537e); color: #fff; }
+    .btn-off     { background: #2a2a2a; color: #888; border: 1px solid #444; }
+
+    .status-bar {
+      margin-top: 14px;
+      padding: 9px 14px;
+      background: #0d0d0d;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .audio-panel {
+  margin-top: 20px;
+  background: #0d0d0d;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.audio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  color: #888;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+
+
+
+.spectrum {
+  height: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 8px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.bar {
+  width: 12px;
+  height: 36px;
+  background: rgb(10, 10, 10);
+  border-radius: 3px;
+  transition: background 0.06s linear;
+}
+
+
+
+    .status-left { display: flex; align-items: center; gap: 8px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; transition: background 0.2s; flex-shrink: 0; }
+    .fps { color: #444; font-size: 11px; }
+
+    .code-block {
+      margin-top: 24px;
+      background: #0d0d0d;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #aaa;
+      overflow-x: auto;
+    }
+    .comment { color: #555; }
+    .keyword { color: #7f77dd; }
+    .func    { color: #378add; }
+    .str     { color: #639922; }
+    .num     { color: #ef9f27; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>WS2812B LED Strip Simulator</h1>
+  <p class="subtitle">ESP32 &mdash; 60 LEDs/m &mdash; 1m strip &mdash; GPIO output &mdash; Sound-reactive lighting project</p>
+
+  <div class="strip-container" id="strip"></div>
+
+  <div class="controls">
+    <button class="btn btn-red"     onclick="setMode('red')">Red</button>
+    <button class="btn btn-green"   onclick="setMode('green')">Green</button>
+    <button class="btn btn-blue"    onclick="setMode('blue')">Blue</button>
+    <button class="btn btn-rainbow" onclick="setMode('rainbow')">Rainbow</button>
+    <button class="btn btn-off"     onclick="setMode('off')">Off</button>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="status-dot" id="dot"></span>
+      <span id="status-text">Idle &mdash; no mode active</span>
+    </div>
+    <span class="fps" id="fps-label"></span>
+  </div>
+
+          <div class="audio-panel">
+            <div class="audio-header">
+                <span>Microphone spectrum</span>
+                <button class="btn btn-blue" onclick="startMic()">Start mic
+                </button>
+                </div>
+            <div class="spectrum" id="spectrum"></div>
+        </div>
+
+  <div class="code-block">
+    <span class="comment">// ESP32 FastLED equivalent commands</span><br><br>
+    <span class="keyword">#include</span> <span class="str">&lt;FastLED.h&gt;</span><br><br>
+    <span class="keyword">#define</span> NUM_LEDS  <span class="num">60</span><br>
+    <span class="keyword">#define</span> DATA_PIN  <span class="num">5</span><br><br>
+    CRGB leds[NUM_LEDS];<br><br>
+    <span class="comment">// Red     &rarr; </span><span class="func">fill_solid</span>(leds, NUM_LEDS, CRGB::<span class="str">Red</span>);<br>
+    <span class="comment">// Green   &rarr; </span><span class="func">fill_solid</span>(leds, NUM_LEDS, CRGB::<span class="str">Green</span>);<br>
+    <span class="comment">// Blue    &rarr; </span><span class="func">fill_solid</span>(leds, NUM_LEDS, CRGB::<span class="str">Blue</span>);<br>
+    <span class="comment">// Rainbow &rarr; </span><span class="func">fill_rainbow</span>(leds, NUM_LEDS, gHue++, <span class="num">4</span>);<br>
+    <span class="comment">// Off     &rarr; </span><span class="func">FastLED</span>.clear();<br><br>
+    <span class="func">FastLED</span>.show();
+  </div>
+
+</div>
+
+<script>
+  // Total number of LEDs in the simulated strip.
+// Changing this changes how many LED "pixels" are created on screen.
+const N = 60;
+
+// Container element that holds the LED strip.
+const strip = document.getElementById('strip');
+
+// Array that stores references to each LED DOM element.
+const pixels = [];
+
+// Create N LED elements and append them into the strip container.
+for (let i = 0; i < N; i++) {
+  const p = document.createElement('div');
+  p.className = 'pixel';
+  strip.appendChild(p);
+  pixels.push(p);
+}
+
+// Stores the current animation frame id for cancellation.
+let animFrame = null;
+
+// Global hue offset for the rainbow animation.
+// Increasing this value over time makes the rainbow move.
+let rainbowOffset = 0;
+
+// Convert HSV color to RGB.
+// h = hue angle in degrees (0-360)
+// s = saturation (0-1)
+// v = value/brightness (0-1)
+function hsvToRgb(h, s, v) {
+  h = h % 360;
+
+  const c = v * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = v - c;
+
+  let r = 0, g = 0, b = 0;
+
+  if (h < 60) {
+    r = c; g = x; b = 0;
+  } else if (h < 120) {
+    r = x; g = c; b = 0;
+  } else if (h < 180) {
+    r = 0; g = c; b = x;
+  } else if (h < 240) {
+    r = 0; g = x; b = c;
+  } else if (h < 300) {
+    r = x; g = 0; b = c;
+  } else {
+    r = c; g = 0; b = x;
+  }
+
+  return [
+    Math.round((r + m) * 255),
+    Math.round((g + m) * 255),
+    Math.round((b + m) * 255)
+  ];
+}
+
+// Set one LED pixel to a specific RGB color.
+// i = LED index
+// r, g, b = color channels in range 0-255
+function setPixel(i, r, g, b) {
+  pixels[i].style.background = `rgb(${r},${g},${b})`;
+}
+
+// Stop any currently running animation loop.
+// This is used before switching modes so animations do not overlap.
+function clearAnim() {
+  if (animFrame) {
+    cancelAnimationFrame(animFrame);
+    animFrame = null;
+  }
+}
+
+// Update the status bar text and status indicator color.
+// label = text shown in the UI
+// r, g, b = dot color
+function setStatus(label, r, g, b) {
+  document.getElementById('status-text').textContent = label;
+  document.getElementById('dot').style.background =
+    (r + g + b > 0) ? `rgb(${r},${g},${b})` : '#333';
+}
+
+// Switch between manual LED modes.
+function setMode(mode) {
+  // Stop any previous animation when mode changes.
+  clearAnim();
+
+  // Clear FPS label unless a mode updates it continuously.
+  document.getElementById('fps-label').textContent = '';
+
+  // Turn all LEDs off.
+  if (mode === 'off') {
+    for (let i = 0; i < N; i++) setPixel(i, 0, 0, 0);
+    setStatus('Off — all pixels cleared', 0, 0, 0);
+    return;
+  }
+
+  // Set all LEDs to red.
+  if (mode === 'red') {
+    for (let i = 0; i < N; i++) setPixel(i, 220, 40, 40);
+    setStatus('Red — RGB(220, 40, 40)', 220, 40, 40);
+    return;
+  }
+
+  // Set all LEDs to green.
+  if (mode === 'green') {
+    for (let i = 0; i < N; i++) setPixel(i, 60, 180, 50);
+    setStatus('Green — RGB(60, 180, 50)', 60, 180, 50);
+    return;
+  }
+
+  // Set all LEDs to blue.
+  if (mode === 'blue') {
+    for (let i = 0; i < N; i++) setPixel(i, 40, 110, 220);
+    setStatus('Blue — RGB(40, 110, 220)', 40, 110, 220);
+    return;
+  }
+
+  // Animated rainbow mode.
+  if (mode === 'rainbow') {
+    let frameCount = 0;
+    let fpsStart = performance.now();
+
+    function drawRainbow(ts) {
+      // Controls how fast the rainbow scrolls.
+      // Larger value = faster motion.
+      rainbowOffset = (rainbowOffset + 1.2) % 360;
+
+      for (let i = 0; i < N; i++) {
+        // Spread the hue evenly across the strip.
+        const hue = (rainbowOffset + i * (360 / N)) % 360;
+
+        // s = 1 means full saturation
+        // v = 0.9 controls rainbow brightness
+        const [r, g, b] = hsvToRgb(hue, 1, 0.9);
+        setPixel(i, r, g, b);
+      }
+
+      // FPS counter for the rainbow animation.
+      frameCount++;
+      if (ts - fpsStart >= 1000) {
+        document.getElementById('fps-label').textContent = frameCount + ' fps';
+        frameCount = 0;
+        fpsStart = ts;
+      }
+
+      setStatus('Rainbow — cycling hue wheel', 180, 100, 200);
+      animFrame = requestAnimationFrame(drawRainbow);
+    }
+
+    animFrame = requestAnimationFrame(drawRainbow);
+  }
+}
+
+// ---------- Spectrum visualizer UI ----------
+
+// Container element for the microphone spectrum view.
+const spectrumEl = document.getElementById('spectrum');
+
+// Number of spectrum bars shown in the lower panel.
+// Here it matches the LED count, but it can be changed independently.
+const BAR_COUNT = 60;
+
+// Stores references to spectrum bar DOM elements.
+const bars = [];
+
+// Create the spectrum bar elements.
+for (let i = 0; i < BAR_COUNT; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+  spectrumEl.appendChild(bar);
+  bars.push(bar);
+}
+
+// Web Audio objects used for microphone analysis.
+let audioCtx = null;
+let analyser = null;
+let micSource = null;
+
+// Stored but not currently used separately from animFrame.
+// You could use this if you later want a dedicated spectrum animation loop.
+let spectrumFrame = null;
+
+// Currently unused flag, but can be useful later if you want to track mic state.
+let micStarted = false;
+
+// Clamp a number between min and max.
+// Used to keep normalized values inside valid range.
+function clamp(x, min, max) {
+  return Math.max(min, Math.min(max, x));
+}
+
+// Convert a decibel value into a normalized 0..1 intensity.
+// minDb and maxDb define the visible analysis range.
+// Example:
+// db == minDb -> 0
+// db == maxDb -> 1
+function dbToNormalized(db, minDb, maxDb) {
+  return clamp((db - minDb) / (maxDb - minDb), 0, 1);
+}
+
+// Convert a frequency in Hz to the nearest FFT bin index.
+// sampleRate = audio sample rate from AudioContext
+// fftSize = analyser FFT size
+function freqToIndex(freq, sampleRate, fftSize) {
+  const nyquist = sampleRate / 2;
+  return clamp(
+    Math.round((freq / nyquist) * (fftSize / 2)),
+    0,
+    fftSize / 2 - 1
+  );
+}
+
+// Average a frequency range using power-domain averaging.
+// This is more physically meaningful than directly averaging dB values.
+//
+// data = Float32Array of FFT bin magnitudes in dB
+// startIndex, endIndex = FFT bin range for one log-frequency band
+function averagePowerDbRange(data, startIndex, endIndex) {
+  let powerSum = 0;
+  let count = 0;
+
+  for (let i = startIndex; i <= endIndex; i++) {
+    const db = data[i];
+
+    // Convert dB to linear power.
+    const power = Math.pow(10, db / 10);
+    powerSum += power;
+    count++;
+  }
+
+  // Fallback if the range is empty or silent.
+  if (!count || powerSum <= 0) return -100;
+
+  const avgPower = powerSum / count;
+
+  // Convert average power back to dB.
+  return 10 * Math.log10(avgPower);
+}
+
+// Main microphone-driven LED update loop.
+// Reads FFT data, maps it to logarithmic frequency bands,
+// converts each band to intensity, and writes the result to the LED strip.
+function updateLedStripFromMicScientific() {
+  if (!analyser) return;
+
+  // Float32 dB data from the analyser.
+  // This is more suitable than byte data for scientific-style visualization.
+  const data = new Float32Array(analyser.frequencyBinCount);
+  analyser.getFloatFrequencyData(data);
+
+  const sampleRate = audioCtx.sampleRate;
+  const fftSize = analyser.fftSize;
+
+  // Frequency range displayed across the strip.
+  // 20 Hz to 20 kHz covers the nominal human hearing range.
+  const minFreq = 20;
+  const maxFreq = 20000;
+
+  // dB range used by the analyser for normalization.
+  const minDb = analyser.minDecibels;
+  const maxDb = analyser.maxDecibels;
+
+  for (let i = 0; i < N; i++) {
+    // Logarithmic band edges for LED i.
+    // Each LED represents one log-spaced frequency band.
+    const f1 = minFreq * Math.pow(maxFreq / minFreq, i / N);
+    const f2 = minFreq * Math.pow(maxFreq / minFreq, (i + 1) / N);
+
+    const startIndex = freqToIndex(f1, sampleRate, fftSize);
+    const endIndex = Math.max(startIndex, freqToIndex(f2, sampleRate, fftSize));
+
+    const avgDb = averagePowerDbRange(data, startIndex, endIndex);
+    const intensity = dbToNormalized(avgDb, minDb, maxDb);
+
+    // Color gradient driven only by measured dB level.
+    // All frequency bands use the exact same color scale.
+    const startColor = { r: 0,   g: 0,   b: 100  };  // low level color
+    const endColor   = { r: 0, g: 255,   b: 0   };  // high level color
+
+    const r = Math.round(startColor.r + (endColor.r - startColor.r) * intensity);
+    const g = Math.round(startColor.g + (endColor.g - startColor.g) * intensity);
+    const b = Math.round(startColor.b + (endColor.b - startColor.b) * intensity);
+
+setPixel(i, r, g, b);
+  }
+
+  // Keep updating continuously.
+  animFrame = requestAnimationFrame(updateLedStripFromMicScientific);
+}
+
+// Keep track of the currently active microphone stream
+// so it can be stopped cleanly before restarting.
+let micStream = null;
+
+// Start microphone capture and begin spectrum analysis.
+async function startMic() {
+  try {
+    // Stop any running LED animation loop before switching to mic mode.
+    if (animFrame) {
+      cancelAnimationFrame(animFrame);
+      animFrame = null;
+    }
+
+    // Stop previous microphone stream if one already exists.
+    if (micStream) {
+      micStream.getTracks().forEach(track => track.stop());
+      micStream = null;
+    }
+
+    // Close previous audio context to avoid stacking audio resources.
+    if (audioCtx) {
+      await audioCtx.close();
+      audioCtx = null;
+    }
+
+    // Ask the browser for microphone access.
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    // Create Web Audio analysis pipeline:
+    // microphone -> MediaStreamSource -> AnalyserNode
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    micSource = audioCtx.createMediaStreamSource(micStream);
+
+    // FFT size controls frequency resolution.
+    // Larger FFT = better frequency detail, slower response.
+    analyser.fftSize = 8192;
+
+    // Temporal smoothing.
+    // 0.0 = no smoothing, fastest/rawest response.
+    // Higher values = more stable but more averaged motion.
+    analyser.smoothingTimeConstant = 0.0001;
+
+    // Visible decibel range used by the analyser.
+    // Signals at minDecibels map near 0 intensity.
+    // Signals at maxDecibels map near 1 intensity.
+    analyser.minDecibels = -100;
+    analyser.maxDecibels = -30;
+
+    micSource.connect(analyser);
+
+    // Start continuous microphone-driven LED update.
+    updateLedStripFromMicScientific();
+
+    setStatus('Microphone spectrum active', 80, 170, 255);
+  } catch (err) {
+    console.error(err);
+    setStatus(`Mic error: ${err.name}`, 220, 70, 70);
+  }
+}
+
+// Start the page in rainbow mode on load.
+setMode('rainbow');
+</script>
+</body>
+</html>
