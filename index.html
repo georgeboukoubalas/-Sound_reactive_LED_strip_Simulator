@@ -29,8 +29,14 @@
       text-transform: uppercase;
     }
 
-    .subtitle { font-size: 12px; color: #555; margin-bottom: 20px; letter-spacing: 0.06em; }
+    .subtitle {
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 20px;
+      letter-spacing: 0.06em;
+    }
 
+    /* ── LED Strip ── */
     .strip-container {
       background: #0d0d0d;
       border: 1px solid #2a2a2a;
@@ -46,9 +52,10 @@
       height: 36px;
       border-radius: 3px;
       background: #1a1a1a;
-      transition: background 0.15s ease;
+      transition: background 0.06s ease;
     }
 
+    /* ── Controls ── */
     .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 
     .btn {
@@ -68,9 +75,15 @@
     .btn-red     { background: #e24b4a; color: #fff; }
     .btn-green   { background: #3a9e3a; color: #fff; }
     .btn-blue    { background: #378add; color: #fff; }
-    .btn-rainbow { background: linear-gradient(90deg,#e24b4a,#ef9f27,#3a9e3a,#378add,#7f77dd,#d4537e); color: #fff; }
+    .btn-rainbow {
+      background: linear-gradient(90deg,#e24b4a,#ef9f27,#3a9e3a,#378add,#7f77dd,#d4537e);
+      color: #fff;
+    }
     .btn-off     { background: #2a2a2a; color: #888; border: 1px solid #444; }
+    .btn-mic     { background: #1a3a1a; color: #3a9e3a; border: 1px solid #3a9e3a; }
+    .btn-mic.active { background: #3a9e3a; color: #fff; }
 
+    /* ── Status Bar ── */
     .status-bar {
       margin-top: 14px;
       padding: 9px 14px;
@@ -83,55 +96,80 @@
       justify-content: space-between;
       align-items: center;
     }
-
-    .audio-panel {
-  margin-top: 20px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 14px;
-}
-
-.audio-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-  color: #888;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-
-
-
-.spectrum {
-  height: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  background: #111;
-  border: 1px solid #222;
-  border-radius: 8px;
-  padding: 10px;
-  overflow: hidden;
-}
-
-.bar {
-  width: 12px;
-  height: 36px;
-  background: rgb(10, 10, 10);
-  border-radius: 3px;
-  transition: background 0.06s linear;
-}
-
-
-
     .status-left { display: flex; align-items: center; gap: 8px; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; transition: background 0.2s; flex-shrink: 0; }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #333;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
     .fps { color: #444; font-size: 11px; }
 
+    /* ── Audio Panel ── */
+    .audio-panel {
+      margin-top: 20px;
+      background: #0d0d0d;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .audio-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      color: #888;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .audio-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #444;
+      margin-bottom: 4px;
+      padding: 0 2px;
+    }
+
+    /* Spectrum bars sit in a fixed-height container, bars grow upward */
+    .spectrum {
+      display: flex;
+      align-items: flex-end;      /* bars grow from the bottom */
+      gap: 3px;
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 6px;
+      height: 80px;               /* fixed height — bars fill it dynamically */
+      overflow: hidden;
+    }
+
+    .bar {
+      flex: 1;
+      min-width: 0;
+      height: 2px;                /* starts collapsed, JS sets height */
+      border-radius: 2px 2px 0 0;
+      background: #0a0a0a;
+      transition: height 0.05s ease, background 0.05s ease;
+    }
+
+    /* ── Sensitivity Slider ── */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      font-size: 11px;
+      color: #555;
+    }
+    .slider-row input[type=range] { flex: 1; }
+    .slider-row span { min-width: 28px; text-align: right; color: #888; }
+
+    /* ── Code Block ── */
     .code-block {
       margin-top: 24px;
       background: #0d0d0d;
@@ -156,16 +194,20 @@
   <h1>WS2812B LED Strip Simulator</h1>
   <p class="subtitle">ESP32 &mdash; 60 LEDs/m &mdash; 1m strip &mdash; GPIO output &mdash; Sound-reactive lighting project</p>
 
+  <!-- LED Strip -->
   <div class="strip-container" id="strip"></div>
 
+  <!-- Mode Buttons -->
   <div class="controls">
     <button class="btn btn-red"     onclick="setMode('red')">Red</button>
     <button class="btn btn-green"   onclick="setMode('green')">Green</button>
     <button class="btn btn-blue"    onclick="setMode('blue')">Blue</button>
     <button class="btn btn-rainbow" onclick="setMode('rainbow')">Rainbow</button>
     <button class="btn btn-off"     onclick="setMode('off')">Off</button>
+    <button class="btn btn-mic"     onclick="toggleMic()" id="micBtn">Start mic</button>
   </div>
 
+  <!-- Status Bar -->
   <div class="status-bar">
     <div class="status-left">
       <span class="status-dot" id="dot"></span>
@@ -174,15 +216,23 @@
     <span class="fps" id="fps-label"></span>
   </div>
 
-          <div class="audio-panel">
-            <div class="audio-header">
-                <span>Microphone spectrum</span>
-                <button class="btn btn-blue" onclick="startMic()">Start mic
-                </button>
-                </div>
-            <div class="spectrum" id="spectrum"></div>
-        </div>
+  <!-- Microphone Spectrum Panel -->
+  <div class="audio-panel">
+    <div class="audio-header">
+      <span>Microphone spectrum &mdash; 20 Hz &rarr; 20 kHz (log scale)</span>
+    </div>
+    <div class="audio-labels">
+      <span>20 Hz</span><span>200 Hz</span><span>2 kHz</span><span>20 kHz</span>
+    </div>
+    <div class="spectrum" id="spectrum"></div>
+    <div class="slider-row">
+      <span>Sensitivity</span>
+      <input type="range" id="sensitivitySlider" min="-90" max="-30" value="-60" step="1" />
+      <span id="sensitivityLabel">-60 dB</span>
+    </div>
+  </div>
 
+  <!-- FastLED Code Reference -->
   <div class="code-block">
     <span class="comment">// ESP32 FastLED equivalent commands</span><br><br>
     <span class="keyword">#include</span> <span class="str">&lt;FastLED.h&gt;</span><br><br>
@@ -200,17 +250,14 @@
 </div>
 
 <script>
-  // Total number of LEDs in the simulated strip.
-// Changing this changes how many LED "pixels" are created on screen.
+// ─────────────────────────────────────────────
+// LED STRIP SETUP
+// ─────────────────────────────────────────────
+
 const N = 60;
-
-// Container element that holds the LED strip.
-const strip = document.getElementById('strip');
-
-// Array that stores references to each LED DOM element.
+const strip  = document.getElementById('strip');
 const pixels = [];
 
-// Create N LED elements and append them into the strip container.
 for (let i = 0; i < N; i++) {
   const p = document.createElement('div');
   p.className = 'pixel';
@@ -218,157 +265,14 @@ for (let i = 0; i < N; i++) {
   pixels.push(p);
 }
 
-// Stores the current animation frame id for cancellation.
-let animFrame = null;
+// ─────────────────────────────────────────────
+// SPECTRUM BAR SETUP
+// ─────────────────────────────────────────────
 
-// Global hue offset for the rainbow animation.
-// Increasing this value over time makes the rainbow move.
-let rainbowOffset = 0;
-
-// Convert HSV color to RGB.
-// h = hue angle in degrees (0-360)
-// s = saturation (0-1)
-// v = value/brightness (0-1)
-function hsvToRgb(h, s, v) {
-  h = h % 360;
-
-  const c = v * s;
-  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-  const m = v - c;
-
-  let r = 0, g = 0, b = 0;
-
-  if (h < 60) {
-    r = c; g = x; b = 0;
-  } else if (h < 120) {
-    r = x; g = c; b = 0;
-  } else if (h < 180) {
-    r = 0; g = c; b = x;
-  } else if (h < 240) {
-    r = 0; g = x; b = c;
-  } else if (h < 300) {
-    r = x; g = 0; b = c;
-  } else {
-    r = c; g = 0; b = x;
-  }
-
-  return [
-    Math.round((r + m) * 255),
-    Math.round((g + m) * 255),
-    Math.round((b + m) * 255)
-  ];
-}
-
-// Set one LED pixel to a specific RGB color.
-// i = LED index
-// r, g, b = color channels in range 0-255
-function setPixel(i, r, g, b) {
-  pixels[i].style.background = `rgb(${r},${g},${b})`;
-}
-
-// Stop any currently running animation loop.
-// This is used before switching modes so animations do not overlap.
-function clearAnim() {
-  if (animFrame) {
-    cancelAnimationFrame(animFrame);
-    animFrame = null;
-  }
-}
-
-// Update the status bar text and status indicator color.
-// label = text shown in the UI
-// r, g, b = dot color
-function setStatus(label, r, g, b) {
-  document.getElementById('status-text').textContent = label;
-  document.getElementById('dot').style.background =
-    (r + g + b > 0) ? `rgb(${r},${g},${b})` : '#333';
-}
-
-// Switch between manual LED modes.
-function setMode(mode) {
-  // Stop any previous animation when mode changes.
-  clearAnim();
-
-  // Clear FPS label unless a mode updates it continuously.
-  document.getElementById('fps-label').textContent = '';
-
-  // Turn all LEDs off.
-  if (mode === 'off') {
-    for (let i = 0; i < N; i++) setPixel(i, 0, 0, 0);
-    setStatus('Off — all pixels cleared', 0, 0, 0);
-    return;
-  }
-
-  // Set all LEDs to red.
-  if (mode === 'red') {
-    for (let i = 0; i < N; i++) setPixel(i, 220, 40, 40);
-    setStatus('Red — RGB(220, 40, 40)', 220, 40, 40);
-    return;
-  }
-
-  // Set all LEDs to green.
-  if (mode === 'green') {
-    for (let i = 0; i < N; i++) setPixel(i, 60, 180, 50);
-    setStatus('Green — RGB(60, 180, 50)', 60, 180, 50);
-    return;
-  }
-
-  // Set all LEDs to blue.
-  if (mode === 'blue') {
-    for (let i = 0; i < N; i++) setPixel(i, 40, 110, 220);
-    setStatus('Blue — RGB(40, 110, 220)', 40, 110, 220);
-    return;
-  }
-
-  // Animated rainbow mode.
-  if (mode === 'rainbow') {
-    let frameCount = 0;
-    let fpsStart = performance.now();
-
-    function drawRainbow(ts) {
-      // Controls how fast the rainbow scrolls.
-      // Larger value = faster motion.
-      rainbowOffset = (rainbowOffset + 1.2) % 360;
-
-      for (let i = 0; i < N; i++) {
-        // Spread the hue evenly across the strip.
-        const hue = (rainbowOffset + i * (360 / N)) % 360;
-
-        // s = 1 means full saturation
-        // v = 0.9 controls rainbow brightness
-        const [r, g, b] = hsvToRgb(hue, 1, 0.9);
-        setPixel(i, r, g, b);
-      }
-
-      // FPS counter for the rainbow animation.
-      frameCount++;
-      if (ts - fpsStart >= 1000) {
-        document.getElementById('fps-label').textContent = frameCount + ' fps';
-        frameCount = 0;
-        fpsStart = ts;
-      }
-
-      setStatus('Rainbow — cycling hue wheel', 180, 100, 200);
-      animFrame = requestAnimationFrame(drawRainbow);
-    }
-
-    animFrame = requestAnimationFrame(drawRainbow);
-  }
-}
-
-// ---------- Spectrum visualizer UI ----------
-
-// Container element for the microphone spectrum view.
 const spectrumEl = document.getElementById('spectrum');
+const BAR_COUNT  = 60;  // one bar per LED — they mirror each other
+const bars       = [];
 
-// Number of spectrum bars shown in the lower panel.
-// Here it matches the LED count, but it can be changed independently.
-const BAR_COUNT = 60;
-
-// Stores references to spectrum bar DOM elements.
-const bars = [];
-
-// Create the spectrum bar elements.
 for (let i = 0; i < BAR_COUNT; i++) {
   const bar = document.createElement('div');
   bar.className = 'bar';
@@ -376,185 +280,273 @@ for (let i = 0; i < BAR_COUNT; i++) {
   bars.push(bar);
 }
 
-// Web Audio objects used for microphone analysis.
-let audioCtx = null;
-let analyser = null;
-let micSource = null;
+// ─────────────────────────────────────────────
+// ANIMATION STATE
+// Two separate loop handles so mic and color
+// modes never interfere with each other.
+// ─────────────────────────────────────────────
 
-// Stored but not currently used separately from animFrame.
-// You could use this if you later want a dedicated spectrum animation loop.
-let spectrumFrame = null;
+let colorAnimFrame = null;  // used by rainbow / static modes
+let micAnimFrame   = null;  // used by microphone mode exclusively
+let rainbowOffset  = 0;
+let micActive      = false;
 
-// Currently unused flag, but can be useful later if you want to track mic state.
-let micStarted = false;
+// Web Audio objects
+let audioCtx  = null;
+let analyser  = null;
+let micStream = null;
 
-// Clamp a number between min and max.
-// Used to keep normalized values inside valid range.
-function clamp(x, min, max) {
-  return Math.max(min, Math.min(max, x));
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+
+// HSV → RGB  (same algorithm as FastLED fill_rainbow internally)
+function hsvToRgb(h, s, v) {
+  h = h % 360;
+  const c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c;
+  let r = 0, g = 0, b = 0;
+  if      (h < 60)  { r = c; g = x; b = 0; }
+  else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else              { r = c; g = 0; b = x; }
+  return [Math.round((r+m)*255), Math.round((g+m)*255), Math.round((b+m)*255)];
 }
 
-// Convert a decibel value into a normalized 0..1 intensity.
-// minDb and maxDb define the visible analysis range.
-// Example:
-// db == minDb -> 0
-// db == maxDb -> 1
-function dbToNormalized(db, minDb, maxDb) {
-  return clamp((db - minDb) / (maxDb - minDb), 0, 1);
+function setPixel(i, r, g, b) {
+  pixels[i].style.background = `rgb(${r},${g},${b})`;
 }
 
-// Convert a frequency in Hz to the nearest FFT bin index.
-// sampleRate = audio sample rate from AudioContext
-// fftSize = analyser FFT size
+function setBar(i, r, g, b, heightPct) {
+  const SPECTRUM_HEIGHT = 80;   // must match CSS .spectrum height in px
+  bars[i].style.height     = Math.max(2, heightPct * SPECTRUM_HEIGHT) + 'px';
+  bars[i].style.background = `rgb(${r},${g},${b})`;
+}
+
+function stopColorAnim() {
+  if (colorAnimFrame) { cancelAnimationFrame(colorAnimFrame); colorAnimFrame = null; }
+}
+
+function stopMicAnim() {
+  if (micAnimFrame) { cancelAnimationFrame(micAnimFrame); micAnimFrame = null; }
+}
+
+function setStatus(label, r, g, b) {
+  document.getElementById('status-text').textContent = label;
+  document.getElementById('dot').style.background =
+    (r + g + b > 0) ? `rgb(${r},${g},${b})` : '#333';
+}
+
+function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+
+// ─────────────────────────────────────────────
+// COLOR MODES
+// ─────────────────────────────────────────────
+
+function setMode(mode) {
+  // Stop both loops cleanly before switching
+  stopColorAnim();
+  stopMicAnim();
+  stopMicHardware();
+
+  document.getElementById('fps-label').textContent = '';
+  document.getElementById('micBtn').textContent = 'Start mic';
+  document.getElementById('micBtn').classList.remove('active');
+  micActive = false;
+
+  if (mode === 'off') {
+    for (let i = 0; i < N; i++) { setPixel(i, 0, 0, 0); setBar(i, 0, 0, 0, 0); }
+    setStatus('Off — all pixels cleared', 0, 0, 0);
+    return;
+  }
+  if (mode === 'red') {
+    for (let i = 0; i < N; i++) { setPixel(i, 220, 40, 40); setBar(i, 220, 40, 40, 1); }
+    setStatus('Red — RGB(220, 40, 40)', 220, 40, 40);
+    return;
+  }
+  if (mode === 'green') {
+    for (let i = 0; i < N; i++) { setPixel(i, 60, 180, 50); setBar(i, 60, 180, 50, 1); }
+    setStatus('Green — RGB(60, 180, 50)', 60, 180, 50);
+    return;
+  }
+  if (mode === 'blue') {
+    for (let i = 0; i < N; i++) { setPixel(i, 40, 110, 220); setBar(i, 40, 110, 220, 1); }
+    setStatus('Blue — RGB(40, 110, 220)', 40, 110, 220);
+    return;
+  }
+  if (mode === 'rainbow') {
+    let frameCount = 0, fpsStart = performance.now();
+    function drawRainbow(ts) {
+      rainbowOffset = (rainbowOffset + 1.2) % 360;
+      for (let i = 0; i < N; i++) {
+        const hue = (rainbowOffset + i * (360 / N)) % 360;
+        const [r, g, b] = hsvToRgb(hue, 1, 0.9);
+        setPixel(i, r, g, b);
+        setBar(i, r, g, b, 0.5 + 0.5 * Math.sin((rainbowOffset / 60) + i * 0.3));
+      }
+      frameCount++;
+      if (ts - fpsStart >= 1000) {
+        document.getElementById('fps-label').textContent = frameCount + ' fps';
+        frameCount = 0; fpsStart = ts;
+      }
+      setStatus('Rainbow — cycling hue wheel', 180, 100, 200);
+      colorAnimFrame = requestAnimationFrame(drawRainbow);
+    }
+    colorAnimFrame = requestAnimationFrame(drawRainbow);
+  }
+}
+
+// ─────────────────────────────────────────────
+// MICROPHONE — FREQUENCY ANALYSIS
+// ─────────────────────────────────────────────
+
+// Convert Hz to the nearest FFT bin index
 function freqToIndex(freq, sampleRate, fftSize) {
   const nyquist = sampleRate / 2;
-  return clamp(
-    Math.round((freq / nyquist) * (fftSize / 2)),
-    0,
-    fftSize / 2 - 1
-  );
+  return clamp(Math.round((freq / nyquist) * (fftSize / 2)), 0, fftSize / 2 - 1);
 }
 
-// Average a frequency range using power-domain averaging.
-// This is more physically meaningful than directly averaging dB values.
-//
-// data = Float32Array of FFT bin magnitudes in dB
-// startIndex, endIndex = FFT bin range for one log-frequency band
-function averagePowerDbRange(data, startIndex, endIndex) {
-  let powerSum = 0;
-  let count = 0;
-
-  for (let i = startIndex; i <= endIndex; i++) {
-    const db = data[i];
-
-    // Convert dB to linear power.
-    const power = Math.pow(10, db / 10);
-    powerSum += power;
+// Power-domain average of a dB bin range
+// More accurate than averaging dB values directly
+function avgPowerDb(data, start, end) {
+  let sum = 0, count = 0;
+  for (let i = start; i <= end; i++) {
+    sum += Math.pow(10, data[i] / 10);
     count++;
   }
-
-  // Fallback if the range is empty or silent.
-  if (!count || powerSum <= 0) return -100;
-
-  const avgPower = powerSum / count;
-
-  // Convert average power back to dB.
-  return 10 * Math.log10(avgPower);
+  if (!count || sum <= 0) return -100;
+  return 10 * Math.log10(sum / count);
 }
 
-// Main microphone-driven LED update loop.
-// Reads FFT data, maps it to logarithmic frequency bands,
-// converts each band to intensity, and writes the result to the LED strip.
-function updateLedStripFromMicScientific() {
+// The core mic loop — runs every animation frame
+function micLoop() {
   if (!analyser) return;
 
-  // Float32 dB data from the analyser.
-  // This is more suitable than byte data for scientific-style visualization.
-  const data = new Float32Array(analyser.frequencyBinCount);
+  const data       = new Float32Array(analyser.frequencyBinCount);
   analyser.getFloatFrequencyData(data);
 
   const sampleRate = audioCtx.sampleRate;
-  const fftSize = analyser.fftSize;
+  const fftSize    = analyser.fftSize;
 
-  // Frequency range displayed across the strip.
-  // 20 Hz to 20 kHz covers the nominal human hearing range.
+  // Read sensitivity from slider
+  // slider sets the noise floor (minDb). maxDb is fixed 10dB above silence.
+  const floorDb = parseFloat(document.getElementById('sensitivitySlider').value);
+  const ceilDb  = floorDb + 40;   // 40 dB dynamic range shown
+
   const minFreq = 20;
   const maxFreq = 20000;
 
-  // dB range used by the analyser for normalization.
-  const minDb = analyser.minDecibels;
-  const maxDb = analyser.maxDecibels;
-
   for (let i = 0; i < N; i++) {
-    // Logarithmic band edges for LED i.
-    // Each LED represents one log-spaced frequency band.
-    const f1 = minFreq * Math.pow(maxFreq / minFreq, i / N);
+    // Logarithmic frequency band edges for LED / bar i
+    const f1 = minFreq * Math.pow(maxFreq / minFreq,  i      / N);
     const f2 = minFreq * Math.pow(maxFreq / minFreq, (i + 1) / N);
 
-    const startIndex = freqToIndex(f1, sampleRate, fftSize);
-    const endIndex = Math.max(startIndex, freqToIndex(f2, sampleRate, fftSize));
+    const startIdx = freqToIndex(f1, sampleRate, fftSize);
+    const endIdx   = Math.max(startIdx, freqToIndex(f2, sampleRate, fftSize));
 
-    const avgDb = averagePowerDbRange(data, startIndex, endIndex);
-    const intensity = dbToNormalized(avgDb, minDb, maxDb);
+    const db        = avgPowerDb(data, startIdx, endIdx);
+    const intensity = clamp((db - floorDb) / (ceilDb - floorDb), 0, 1);
 
-    // Color gradient driven only by measured dB level.
-    // All frequency bands use the exact same color scale.
-    const startColor = { r: 0,   g: 0,   b: 100  };  // low level color
-    const endColor   = { r: 0, g: 255,   b: 0   };  // high level color
+    // Color scale: dark blue (silence) → cyan → green → yellow → red (loud)
+    // This maps directly to the heatmap style used in spectrum analysers
+    let r, g, b;
+    if (intensity < 0.25) {
+      // dark blue → blue
+      const t = intensity / 0.25;
+      r = 0; g = Math.round(t * 80); b = Math.round(100 + t * 155);
+    } else if (intensity < 0.5) {
+      // blue → cyan → green
+      const t = (intensity - 0.25) / 0.25;
+      r = 0; g = Math.round(80 + t * 175); b = Math.round(255 * (1 - t));
+    } else if (intensity < 0.75) {
+      // green → yellow
+      const t = (intensity - 0.5) / 0.25;
+      r = Math.round(t * 255); g = 255; b = 0;
+    } else {
+      // yellow → red
+      const t = (intensity - 0.75) / 0.25;
+      r = 255; g = Math.round(255 * (1 - t)); b = 0;
+    }
 
-    const r = Math.round(startColor.r + (endColor.r - startColor.r) * intensity);
-    const g = Math.round(startColor.g + (endColor.g - startColor.g) * intensity);
-    const b = Math.round(startColor.b + (endColor.b - startColor.b) * intensity);
-
-setPixel(i, r, g, b);
+    // Write to both the LED strip and the spectrum bars simultaneously
+    setPixel(i, r, g, b);
+    setBar(i, r, g, b, intensity);
   }
 
-  // Keep updating continuously.
-  animFrame = requestAnimationFrame(updateLedStripFromMicScientific);
+  micAnimFrame = requestAnimationFrame(micLoop);
 }
 
-// Keep track of the currently active microphone stream
-// so it can be stopped cleanly before restarting.
-let micStream = null;
+// ─────────────────────────────────────────────
+// MIC TOGGLE BUTTON
+// ─────────────────────────────────────────────
 
-// Start microphone capture and begin spectrum analysis.
+async function toggleMic() {
+  if (micActive) {
+    stopMicAnim();
+    stopMicHardware();
+    for (let i = 0; i < N; i++) { setPixel(i, 0, 0, 0); setBar(i, 0, 0, 0, 0); }
+    setStatus('Mic stopped', 0, 0, 0);
+    document.getElementById('micBtn').textContent = 'Start mic';
+    document.getElementById('micBtn').classList.remove('active');
+    micActive = false;
+    return;
+  }
+  await startMic();
+}
+
+function stopMicHardware() {
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if (audioCtx)  { audioCtx.close(); audioCtx = null; analyser = null; }
+}
+
 async function startMic() {
   try {
-    // Stop any running LED animation loop before switching to mic mode.
-    if (animFrame) {
-      cancelAnimationFrame(animFrame);
-      animFrame = null;
-    }
+    stopColorAnim();
+    stopMicAnim();
+    stopMicHardware();
 
-    // Stop previous microphone stream if one already exists.
-    if (micStream) {
-      micStream.getTracks().forEach(track => track.stop());
-      micStream = null;
-    }
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
-    // Close previous audio context to avoid stacking audio resources.
-    if (audioCtx) {
-      await audioCtx.close();
-      audioCtx = null;
-    }
-
-    // Ask the browser for microphone access.
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    // Create Web Audio analysis pipeline:
-    // microphone -> MediaStreamSource -> AnalyserNode
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     analyser = audioCtx.createAnalyser();
-    micSource = audioCtx.createMediaStreamSource(micStream);
 
-    // FFT size controls frequency resolution.
-    // Larger FFT = better frequency detail, slower response.
-    analyser.fftSize = 8192;
+    // FFT size: 4096 = good balance of frequency resolution and speed
+    analyser.fftSize               = 4096;
+    // Smoothing: 0.75 gives a fluid, readable display without lag
+    analyser.smoothingTimeConstant = 0.75;
+    // These are only used as fallback; the slider overrides them in micLoop()
+    analyser.minDecibels           = -90;
+    analyser.maxDecibels           = -10;
 
-    // Temporal smoothing.
-    // 0.0 = no smoothing, fastest/rawest response.
-    // Higher values = more stable but more averaged motion.
-    analyser.smoothingTimeConstant = 0.0001;
+    audioCtx.createMediaStreamSource(micStream).connect(analyser);
 
-    // Visible decibel range used by the analyser.
-    // Signals at minDecibels map near 0 intensity.
-    // Signals at maxDecibels map near 1 intensity.
-    analyser.minDecibels = -100;
-    analyser.maxDecibels = -30;
+    micActive = true;
+    document.getElementById('micBtn').textContent = 'Stop mic';
+    document.getElementById('micBtn').classList.add('active');
+    setStatus('Microphone active — listening', 80, 200, 100);
 
-    micSource.connect(analyser);
-
-    // Start continuous microphone-driven LED update.
-    updateLedStripFromMicScientific();
-
-    setStatus('Microphone spectrum active', 80, 170, 255);
+    micAnimFrame = requestAnimationFrame(micLoop);
   } catch (err) {
     console.error(err);
-    setStatus(`Mic error: ${err.name}`, 220, 70, 70);
+    setStatus('Mic error: ' + err.name + ' — check browser permissions', 220, 70, 70);
   }
 }
 
-// Start the page in rainbow mode on load.
+// ─────────────────────────────────────────────
+// SENSITIVITY SLIDER
+// ─────────────────────────────────────────────
+
+const slider = document.getElementById('sensitivitySlider');
+const sliderLabel = document.getElementById('sensitivityLabel');
+slider.addEventListener('input', () => {
+  sliderLabel.textContent = slider.value + ' dB';
+});
+
+// ─────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────
+
 setMode('rainbow');
 </script>
 </body>
