@@ -74,6 +74,8 @@ Click Start mic or any of the color modes, and watch your physical strip react i
 Sound_reactive_LED_strip_Simulator/
 index.html                 # Full simulator & controller — self-contained UI
 
+schem_of_the_system.jpeg   # schematic visualization of the system
+
 esp32_firmware.ino         # The FastLED Serial listening script for the ESP32
 
 README.md                  # This file
