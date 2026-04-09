@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WS2812B LED Strip Simulator</title>
+  <title>WS2812B LED Strip Simulator & Controller</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       background: #1a1a1a;
@@ -18,7 +23,10 @@
       padding: 40px 20px;
     }
 
-    .container { width: 100%; max-width: 820px; }
+    .container {
+      width: 100%;
+      max-width: 820px;
+    }
 
     h1 {
       font-size: 16px;
@@ -36,7 +44,6 @@
       letter-spacing: 0.06em;
     }
 
-    /* ── LED Strip ── */
     .strip-container {
       background: #0d0d0d;
       border: 1px solid #2a2a2a;
@@ -55,8 +62,12 @@
       transition: background 0.06s ease;
     }
 
-    /* ── Controls ── */
-    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
 
     .btn {
       padding: 10px 24px;
@@ -69,21 +80,59 @@
       letter-spacing: 0.04em;
       transition: opacity 0.15s, transform 0.1s;
     }
-    .btn:hover  { opacity: 0.88; }
-    .btn:active { transform: scale(0.96); opacity: 0.75; }
 
-    .btn-red     { background: #e24b4a; color: #fff; }
-    .btn-green   { background: #3a9e3a; color: #fff; }
-    .btn-blue    { background: #378add; color: #fff; }
-    .btn-rainbow {
-      background: linear-gradient(90deg,#e24b4a,#ef9f27,#3a9e3a,#378add,#7f77dd,#d4537e);
+    .btn:hover {
+      opacity: 0.88;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+      opacity: 0.75;
+    }
+
+    .btn-red {
+      background: #e24b4a;
       color: #fff;
     }
-    .btn-off     { background: #2a2a2a; color: #888; border: 1px solid #444; }
-    .btn-mic     { background: #1a3a1a; color: #3a9e3a; border: 1px solid #3a9e3a; }
-    .btn-mic.active { background: #3a9e3a; color: #fff; }
 
-    /* ── Status Bar ── */
+    .btn-green {
+      background: #3a9e3a;
+      color: #fff;
+    }
+
+    .btn-blue {
+      background: #378add;
+      color: #fff;
+    }
+
+    .btn-rainbow {
+      background: linear-gradient(90deg, #e24b4a, #ef9f27, #3a9e3a, #378add, #7f77dd, #d4537e);
+      color: #fff;
+    }
+
+    .btn-off {
+      background: #2a2a2a;
+      color: #888;
+      border: 1px solid #444;
+    }
+
+    .btn-mic {
+      background: #1a3a1a;
+      color: #3a9e3a;
+      border: 1px solid #3a9e3a;
+    }
+
+    .btn-mic.active {
+      background: #3a9e3a;
+      color: #fff;
+    }
+
+    .btn-usb {
+      background: #8e44ad;
+      color: #fff;
+      border: 1px solid #732d91;
+    }
+
     .status-bar {
       margin-top: 14px;
       padding: 9px 14px;
@@ -96,17 +145,27 @@
       justify-content: space-between;
       align-items: center;
     }
-    .status-left { display: flex; align-items: center; gap: 8px; }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .status-dot {
-      width: 8px; height: 8px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: #333;
       transition: background 0.2s;
       flex-shrink: 0;
     }
-    .fps { color: #444; font-size: 11px; }
 
-    /* ── Audio Panel ── */
+    .fps {
+      color: #444;
+      font-size: 11px;
+    }
+
     .audio-panel {
       margin-top: 20px;
       background: #0d0d0d;
@@ -135,29 +194,27 @@
       padding: 0 2px;
     }
 
-    /* Spectrum bars sit in a fixed-height container, bars grow upward */
     .spectrum {
       display: flex;
-      align-items: flex-end;      /* bars grow from the bottom */
+      align-items: flex-end;
       gap: 3px;
       background: #111;
       border: 1px solid #222;
       border-radius: 8px;
       padding: 6px;
-      height: 80px;               /* fixed height — bars fill it dynamically */
+      height: 80px;
       overflow: hidden;
     }
 
     .bar {
       flex: 1;
       min-width: 0;
-      height: 2px;                /* starts collapsed, JS sets height */
+      height: 2px;
       border-radius: 2px 2px 0 0;
       background: #0a0a0a;
       transition: height 0.05s ease, background 0.05s ease;
     }
 
-    /* ── Sensitivity Slider ── */
     .slider-row {
       display: flex;
       align-items: center;
@@ -166,388 +223,360 @@
       font-size: 11px;
       color: #555;
     }
-    .slider-row input[type=range] { flex: 1; }
-    .slider-row span { min-width: 28px; text-align: right; color: #888; }
 
-    /* ── Code Block ── */
-    .code-block {
-      margin-top: 24px;
-      background: #0d0d0d;
-      border: 1px solid #2a2a2a;
-      border-radius: 10px;
-      padding: 16px;
-      font-size: 12px;
-      line-height: 1.7;
-      color: #aaa;
-      overflow-x: auto;
+    .slider-row input[type=range] {
+      flex: 1;
     }
-    .comment { color: #555; }
-    .keyword { color: #7f77dd; }
-    .func    { color: #378add; }
-    .str     { color: #639922; }
-    .num     { color: #ef9f27; }
+
+    .slider-row span {
+      min-width: 28px;
+      text-align: right;
+      color: #888;
+    }
   </style>
 </head>
+
 <body>
-<div class="container">
+  <div class="container">
+    <h1>WS2812B LED Strip Controller</h1>
+    <p class="subtitle">Web-to-Hardware Serial Connection Active</p>
 
-  <h1>WS2812B LED Strip Simulator</h1>
-  <p class="subtitle">ESP32 &mdash; 60 LEDs/m &mdash; 1m strip &mdash; GPIO output &mdash; Sound-reactive lighting project</p>
+    <div class="strip-container" id="strip"></div>
 
-  <!-- LED Strip -->
-  <div class="strip-container" id="strip"></div>
-
-  <!-- Mode Buttons -->
-  <div class="controls">
-    <button class="btn btn-red"     onclick="setMode('red')">Red</button>
-    <button class="btn btn-green"   onclick="setMode('green')">Green</button>
-    <button class="btn btn-blue"    onclick="setMode('blue')">Blue</button>
-    <button class="btn btn-rainbow" onclick="setMode('rainbow')">Rainbow</button>
-    <button class="btn btn-off"     onclick="setMode('off')">Off</button>
-    <button class="btn btn-mic"     onclick="toggleMic()" id="micBtn">Start mic</button>
-  </div>
-
-  <!-- Status Bar -->
-  <div class="status-bar">
-    <div class="status-left">
-      <span class="status-dot" id="dot"></span>
-      <span id="status-text">Idle &mdash; no mode active</span>
+    <div class="controls">
+      <button class="btn btn-red" onclick="setMode('red')">Red</button>
+      <button class="btn btn-green" onclick="setMode('green')">Green</button>
+      <button class="btn btn-blue" onclick="setMode('blue')">Blue</button>
+      <button class="btn btn-rainbow" onclick="setMode('rainbow')">Rainbow</button>
+      <button class="btn btn-off" onclick="setMode('off')">Off</button>
+      <button class="btn btn-mic" onclick="toggleMic()" id="micBtn">Start mic</button>
+      <button class="btn btn-usb" onclick="connectUSB()" id="usbBtn">🔌 Connect ESP32</button>
     </div>
-    <span class="fps" id="fps-label"></span>
-  </div>
 
-  <!-- Microphone Spectrum Panel -->
-  <div class="audio-panel">
-    <div class="audio-header">
-      <span>Microphone spectrum &mdash; 20 Hz &rarr; 20 kHz (log scale)</span>
+    <div class="status-bar">
+      <div class="status-left">
+        <span class="status-dot" id="dot"></span>
+        <span id="status-text">Idle &mdash; no mode active</span>
+      </div>
+      <span class="fps" id="fps-label"></span>
     </div>
-    <div class="audio-labels">
-      <span>20 Hz</span><span>200 Hz</span><span>2 kHz</span><span>20 kHz</span>
-    </div>
-    <div class="spectrum" id="spectrum"></div>
-    <div class="slider-row">
-      <span>Sensitivity</span>
-      <input type="range" id="sensitivitySlider" min="-90" max="-30" value="-60" step="1" />
-      <span id="sensitivityLabel">-60 dB</span>
+
+    <div class="audio-panel">
+      <div class="audio-header">
+        <span>Microphone spectrum &mdash; 20 Hz &rarr; 20 kHz (log scale)</span>
+      </div>
+      <div class="audio-labels">
+        <span>20 Hz</span><span>200 Hz</span><span>2 kHz</span><span>20 kHz</span>
+      </div>
+      <div class="spectrum" id="spectrum"></div>
+      <div class="slider-row">
+        <span>Sensitivity</span>
+        <input type="range" id="sensitivitySlider" min="-90" max="-30" value="-60" step="1" />
+        <span id="sensitivityLabel">-60 dB</span>
+      </div>
     </div>
   </div>
 
-  <!-- FastLED Code Reference -->
-  <div class="code-block">
-    <span class="comment">// ESP32 FastLED equivalent commands</span><br><br>
-    <span class="keyword">#include</span> <span class="str">&lt;FastLED.h&gt;</span><br><br>
-    <span class="keyword">#define</span> NUM_LEDS  <span class="num">60</span><br>
-    <span class="keyword">#define</span> DATA_PIN  <span class="num">5</span><br><br>
-    CRGB leds[NUM_LEDS];<br><br>
-    <span class="comment">// Red     &rarr; </span><span class="func">fill_solid</span>(leds, NUM_LEDS, CRGB::<span class="str">Red</span>);<br>
-    <span class="comment">// Green   &rarr; </span><span class="func">fill_solid</span>(leds, NUM_LEDS, CRGB::<span class="str">Green</span>);<br>
-    <span class="comment">// Blue    &rarr; </span><span class="func">fill_solid</span>(leds, NUM_LEDS, CRGB::<span class="str">Blue</span>);<br>
-    <span class="comment">// Rainbow &rarr; </span><span class="func">fill_rainbow</span>(leds, NUM_LEDS, gHue++, <span class="num">4</span>);<br>
-    <span class="comment">// Off     &rarr; </span><span class="func">FastLED</span>.clear();<br><br>
-    <span class="func">FastLED</span>.show();
-  </div>
+  <script>
+    // ─────────────────────────────────────────────
+    // USB SERIAL CONNECTION (NEW MAGIC!)
+    // ─────────────────────────────────────────────
+    let serialPort = null;
+    let serialWriter = null;
 
-</div>
+    // New Queue System Variables
+    let isSending = false;
+    let pendingColors = null;
+    let lastSendTime = 0;
+    let timerId = null;
 
-<script>
-// ─────────────────────────────────────────────
-// LED STRIP SETUP
-// ─────────────────────────────────────────────
+    async function connectUSB() {
+      try {
+        serialPort = await navigator.serial.requestPort();
+        await serialPort.open({ baudRate: 115200 });
+        serialWriter = serialPort.writable.getWriter();
 
-const N = 60;
-const strip  = document.getElementById('strip');
-const pixels = [];
+        document.getElementById('usbBtn').textContent = "✅ ESP32 Connected";
+        document.getElementById('usbBtn').style.background = "#27ae60";
+        alert("Success! The webpage is now talking to the ESP32.");
+      } catch (err) {
+        console.error("USB Connection failed:", err);
+        alert("Could not connect. Make sure no other programs (like Arduino IDE) are using the port.");
+      }
+    }
 
-for (let i = 0; i < N; i++) {
-  const p = document.createElement('div');
-  p.className = 'pixel';
-  strip.appendChild(p);
-  pixels.push(p);
-}
+    // ─────────────────────────────────────────────
+    // QUEUE & THROTTLE SYSTEM (THE FIX)
+    // ─────────────────────────────────────────────
+    function sendToHardware(colorArray) {
+      if (!serialWriter) return;
 
-// ─────────────────────────────────────────────
-// SPECTRUM BAR SETUP
-// ─────────────────────────────────────────────
+      // Always save the absolute newest frame requested by the buttons/animations
+      pendingColors = colorArray;
 
-const spectrumEl = document.getElementById('spectrum');
-const BAR_COUNT  = 60;  // one bar per LED — they mirror each other
-const bars       = [];
+      // If the USB is currently busy, walk away. It will check the queue when it finishes.
+      if (isSending) return;
 
-for (let i = 0; i < BAR_COUNT; i++) {
-  const bar = document.createElement('div');
-  bar.className = 'bar';
-  spectrumEl.appendChild(bar);
-  bars.push(bar);
-}
+      const now = Date.now();
+      const timeSinceLast = now - lastSendTime;
 
-// ─────────────────────────────────────────────
-// ANIMATION STATE
-// Two separate loop handles so mic and color
-// modes never interfere with each other.
-// ─────────────────────────────────────────────
+      // If we sent data too recently, schedule a delayed send to give ESP32 time to breathe (~35ms)
+      if (timeSinceLast < 35) {
+        if (!timerId) {
+          timerId = setTimeout(() => {
+            timerId = null;
+            flushQueue();
+          }, 35 - timeSinceLast);
+        }
+        return;
+      }
 
-let colorAnimFrame = null;  // used by rainbow / static modes
-let micAnimFrame   = null;  // used by microphone mode exclusively
-let rainbowOffset  = 0;
-let micActive      = false;
+      // If the line is clear and enough time has passed, send it immediately!
+      flushQueue();
+    }
 
-// Web Audio objects
-let audioCtx  = null;
-let analyser  = null;
-let micStream = null;
+    async function flushQueue() {
+      if (isSending || !pendingColors) return;
 
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
+      isSending = true;
+      lastSendTime = Date.now();
 
-// HSV → RGB  (same algorithm as FastLED fill_rainbow internally)
-function hsvToRgb(h, s, v) {
-  h = h % 360;
-  const c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c;
-  let r = 0, g = 0, b = 0;
-  if      (h < 60)  { r = c; g = x; b = 0; }
-  else if (h < 120) { r = x; g = c; b = 0; }
-  else if (h < 180) { r = 0; g = c; b = x; }
-  else if (h < 240) { r = 0; g = x; b = c; }
-  else if (h < 300) { r = x; g = 0; b = c; }
-  else              { r = c; g = 0; b = x; }
-  return [Math.round((r+m)*255), Math.round((g+m)*255), Math.round((b+m)*255)];
-}
+      // Grab the latest colors from the waiting room and clear it
+      const colorArray = pendingColors;
+      pendingColors = null;
 
-function setPixel(i, r, g, b) {
-  pixels[i].style.background = `rgb(${r},${g},${b})`;
-}
+      try {
+        const data = new Uint8Array(3 + colorArray.length);
+        data[0] = 76; // 'L'
+        data[1] = 69; // 'E'
+        data[2] = 68; // 'D'
+        for (let i = 0; i < colorArray.length; i++) {
+          data[3 + i] = colorArray[i];
+        }
+        await serialWriter.write(data);
+      } catch (err) {
+        console.error("Hardware error:", err);
+      }
 
-function setBar(i, r, g, b, heightPct) {
-  const SPECTRUM_HEIGHT = 80;   // must match CSS .spectrum height in px
-  bars[i].style.height     = Math.max(2, heightPct * SPECTRUM_HEIGHT) + 'px';
-  bars[i].style.background = `rgb(${r},${g},${b})`;
-}
+      isSending = false;
 
-function stopColorAnim() {
-  if (colorAnimFrame) { cancelAnimationFrame(colorAnimFrame); colorAnimFrame = null; }
-}
+      // If new data arrived while we were writing, schedule the next send!
+      if (pendingColors) {
+        if (!timerId) {
+          timerId = setTimeout(() => {
+            timerId = null;
+            flushQueue();
+          }, 35);
+        }
+      }
+    }
 
-function stopMicAnim() {
-  if (micAnimFrame) { cancelAnimationFrame(micAnimFrame); micAnimFrame = null; }
-}
+    // ─────────────────────────────────────────────
+    // LED STRIP & SPECTRUM SETUP
+    // ─────────────────────────────────────────────
+    const N = 60;
+    const strip = document.getElementById('strip');
+    const pixels = [];
+    const spectrumEl = document.getElementById('spectrum');
+    const bars = [];
 
-function setStatus(label, r, g, b) {
-  document.getElementById('status-text').textContent = label;
-  document.getElementById('dot').style.background =
-    (r + g + b > 0) ? `rgb(${r},${g},${b})` : '#333';
-}
+    for (let i = 0; i < N; i++) {
+      const p = document.createElement('div');
+      p.className = 'pixel';
+      strip.appendChild(p);
+      pixels.push(p);
 
-function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      spectrumEl.appendChild(bar);
+      bars.push(bar);
+    }
 
-// ─────────────────────────────────────────────
-// COLOR MODES
-// ─────────────────────────────────────────────
+    let colorAnimFrame = null;
+    let micAnimFrame = null;
+    let rainbowOffset = 0;
+    let micActive = false;
+    let audioCtx = null;
+    let analyser = null;
+    let micStream = null;
 
-function setMode(mode) {
-  // Stop both loops cleanly before switching
-  stopColorAnim();
-  stopMicAnim();
-  stopMicHardware();
+    // ─────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────
+    function hsvToRgb(h, s, v) {
+      h = h % 360;
+      const c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c;
+      let r = 0, g = 0, b = 0;
+      if (h < 60) { r = c; g = x; b = 0; }
+      else if (h < 120) { r = x; g = c; b = 0; }
+      else if (h < 180) { r = 0; g = c; b = x; }
+      else if (h < 240) { r = 0; g = x; b = c; }
+      else if (h < 300) { r = x; g = 0; b = c; }
+      else { r = c; g = 0; b = x; }
+      return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+    }
 
-  document.getElementById('fps-label').textContent = '';
-  document.getElementById('micBtn').textContent = 'Start mic';
-  document.getElementById('micBtn').classList.remove('active');
-  micActive = false;
+    function setPixel(i, r, g, b) { pixels[i].style.background = `rgb(${r},${g},${b})`; }
+    function setBar(i, r, g, b, heightPct) {
+      bars[i].style.height = Math.max(2, heightPct * 80) + 'px';
+      bars[i].style.background = `rgb(${r},${g},${b})`;
+    }
+    function stopColorAnim() { if (colorAnimFrame) { cancelAnimationFrame(colorAnimFrame); colorAnimFrame = null; } }
+    function stopMicAnim() { if (micAnimFrame) { cancelAnimationFrame(micAnimFrame); micAnimFrame = null; } }
+    function setStatus(label, r, g, b) {
+      document.getElementById('status-text').textContent = label;
+      document.getElementById('dot').style.background = (r + g + b > 0) ? `rgb(${r},${g},${b})` : '#333';
+    }
+    function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
 
-  if (mode === 'off') {
-    for (let i = 0; i < N; i++) { setPixel(i, 0, 0, 0); setBar(i, 0, 0, 0, 0); }
-    setStatus('Off — all pixels cleared', 0, 0, 0);
-    return;
-  }
-  if (mode === 'red') {
-    for (let i = 0; i < N; i++) { setPixel(i, 220, 40, 40); setBar(i, 220, 40, 40, 1); }
-    setStatus('Red — RGB(220, 40, 40)', 220, 40, 40);
-    return;
-  }
-  if (mode === 'green') {
-    for (let i = 0; i < N; i++) { setPixel(i, 60, 180, 50); setBar(i, 60, 180, 50, 1); }
-    setStatus('Green — RGB(60, 180, 50)', 60, 180, 50);
-    return;
-  }
-  if (mode === 'blue') {
-    for (let i = 0; i < N; i++) { setPixel(i, 40, 110, 220); setBar(i, 40, 110, 220, 1); }
-    setStatus('Blue — RGB(40, 110, 220)', 40, 110, 220);
-    return;
-  }
-  if (mode === 'rainbow') {
-    let frameCount = 0, fpsStart = performance.now();
-    function drawRainbow(ts) {
-      rainbowOffset = (rainbowOffset + 1.2) % 360;
+    // ─────────────────────────────────────────────
+    // COLOR MODES 
+    // ─────────────────────────────────────────────
+    function setMode(mode) {
+      stopColorAnim(); stopMicAnim(); stopMicHardware();
+      document.getElementById('fps-label').textContent = '';
+      document.getElementById('micBtn').textContent = 'Start mic';
+      document.getElementById('micBtn').classList.remove('active');
+      micActive = false;
+
+      let flatColors = [];
+
+      if (mode === 'off') {
+        for (let i = 0; i < N; i++) { setPixel(i, 0, 0, 0); setBar(i, 0, 0, 0, 0); flatColors.push(0, 0, 0); }
+        setStatus('Off — all pixels cleared', 0, 0, 0);
+        sendToHardware(flatColors);
+        return;
+      }
+      if (mode === 'red') {
+        for (let i = 0; i < N; i++) { setPixel(i, 220, 40, 40); setBar(i, 220, 40, 40, 1); flatColors.push(220, 40, 40); }
+        setStatus('Red', 220, 40, 40);
+        sendToHardware(flatColors);
+        return;
+      }
+      if (mode === 'green') {
+        for (let i = 0; i < N; i++) { setPixel(i, 60, 180, 50); setBar(i, 60, 180, 50, 1); flatColors.push(60, 180, 50); }
+        setStatus('Green', 60, 180, 50);
+        sendToHardware(flatColors);
+        return;
+      }
+      if (mode === 'blue') {
+        for (let i = 0; i < N; i++) { setPixel(i, 40, 110, 220); setBar(i, 40, 110, 220, 1); flatColors.push(40, 110, 220); }
+        setStatus('Blue', 40, 110, 220);
+        sendToHardware(flatColors);
+        return;
+      }
+      if (mode === 'rainbow') {
+        let frameCount = 0, fpsStart = performance.now();
+        function drawRainbow(ts) {
+          rainbowOffset = (rainbowOffset + 1.2) % 360;
+          let frameColors = [];
+          for (let i = 0; i < N; i++) {
+            const hue = (rainbowOffset + i * (360 / N)) % 360;
+            const [r, g, b] = hsvToRgb(hue, 1, 0.9);
+            setPixel(i, r, g, b);
+            setBar(i, r, g, b, 0.5 + 0.5 * Math.sin((rainbowOffset / 60) + i * 0.3));
+            frameColors.push(r, g, b);
+          }
+          sendToHardware(frameColors);
+
+          frameCount++;
+          if (ts - fpsStart >= 1000) { document.getElementById('fps-label').textContent = frameCount + ' fps'; frameCount = 0; fpsStart = ts; }
+          setStatus('Rainbow — cycling hue wheel', 180, 100, 200);
+          colorAnimFrame = requestAnimationFrame(drawRainbow);
+        }
+        colorAnimFrame = requestAnimationFrame(drawRainbow);
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // MICROPHONE MODE 
+    // ─────────────────────────────────────────────
+    function freqToIndex(freq, sampleRate, fftSize) { return clamp(Math.round((freq / (sampleRate / 2)) * (fftSize / 2)), 0, fftSize / 2 - 1); }
+    function avgPowerDb(data, start, end) {
+      let sum = 0, count = 0;
+      for (let i = start; i <= end; i++) { sum += Math.pow(10, data[i] / 10); count++; }
+      if (!count || sum <= 0) return -100;
+      return 10 * Math.log10(sum / count);
+    }
+
+    function micLoop() {
+      if (!analyser) return;
+      const data = new Float32Array(analyser.frequencyBinCount);
+      analyser.getFloatFrequencyData(data);
+      const sampleRate = audioCtx.sampleRate;
+      const fftSize = analyser.fftSize;
+      const floorDb = parseFloat(document.getElementById('sensitivitySlider').value);
+      const ceilDb = floorDb + 40;
+      const minFreq = 20, maxFreq = 20000;
+
+      let frameColors = [];
+
       for (let i = 0; i < N; i++) {
-        const hue = (rainbowOffset + i * (360 / N)) % 360;
-        const [r, g, b] = hsvToRgb(hue, 1, 0.9);
+        const f1 = minFreq * Math.pow(maxFreq / minFreq, i / N);
+        const f2 = minFreq * Math.pow(maxFreq / minFreq, (i + 1) / N);
+        const startIdx = freqToIndex(f1, sampleRate, fftSize);
+        const endIdx = Math.max(startIdx, freqToIndex(f2, sampleRate, fftSize));
+        const db = avgPowerDb(data, startIdx, endIdx);
+        const intensity = clamp((db - floorDb) / (ceilDb - floorDb), 0, 1);
+
+        let r, g, b;
+        if (intensity < 0.25) { const t = intensity / 0.25; r = 0; g = Math.round(t * 80); b = Math.round(100 + t * 155); }
+        else if (intensity < 0.5) { const t = (intensity - 0.25) / 0.25; r = 0; g = Math.round(80 + t * 175); b = Math.round(255 * (1 - t)); }
+        else if (intensity < 0.75) { const t = (intensity - 0.5) / 0.25; r = Math.round(t * 255); g = 255; b = 0; }
+        else { const t = (intensity - 0.75) / 0.25; r = 255; g = Math.round(255 * (1 - t)); b = 0; }
+
         setPixel(i, r, g, b);
-        setBar(i, r, g, b, 0.5 + 0.5 * Math.sin((rainbowOffset / 60) + i * 0.3));
+        setBar(i, r, g, b, intensity);
+        frameColors.push(r, g, b);
       }
-      frameCount++;
-      if (ts - fpsStart >= 1000) {
-        document.getElementById('fps-label').textContent = frameCount + ' fps';
-        frameCount = 0; fpsStart = ts;
-      }
-      setStatus('Rainbow — cycling hue wheel', 180, 100, 200);
-      colorAnimFrame = requestAnimationFrame(drawRainbow);
-    }
-    colorAnimFrame = requestAnimationFrame(drawRainbow);
-  }
-}
 
-// ─────────────────────────────────────────────
-// MICROPHONE — FREQUENCY ANALYSIS
-// ─────────────────────────────────────────────
-
-// Convert Hz to the nearest FFT bin index
-function freqToIndex(freq, sampleRate, fftSize) {
-  const nyquist = sampleRate / 2;
-  return clamp(Math.round((freq / nyquist) * (fftSize / 2)), 0, fftSize / 2 - 1);
-}
-
-// Power-domain average of a dB bin range
-// More accurate than averaging dB values directly
-function avgPowerDb(data, start, end) {
-  let sum = 0, count = 0;
-  for (let i = start; i <= end; i++) {
-    sum += Math.pow(10, data[i] / 10);
-    count++;
-  }
-  if (!count || sum <= 0) return -100;
-  return 10 * Math.log10(sum / count);
-}
-
-// The core mic loop — runs every animation frame
-function micLoop() {
-  if (!analyser) return;
-
-  const data       = new Float32Array(analyser.frequencyBinCount);
-  analyser.getFloatFrequencyData(data);
-
-  const sampleRate = audioCtx.sampleRate;
-  const fftSize    = analyser.fftSize;
-
-  // Read sensitivity from slider
-  // slider sets the noise floor (minDb). maxDb is fixed 10dB above silence.
-  const floorDb = parseFloat(document.getElementById('sensitivitySlider').value);
-  const ceilDb  = floorDb + 40;   // 40 dB dynamic range shown
-
-  const minFreq = 20;
-  const maxFreq = 20000;
-
-  for (let i = 0; i < N; i++) {
-    // Logarithmic frequency band edges for LED / bar i
-    const f1 = minFreq * Math.pow(maxFreq / minFreq,  i      / N);
-    const f2 = minFreq * Math.pow(maxFreq / minFreq, (i + 1) / N);
-
-    const startIdx = freqToIndex(f1, sampleRate, fftSize);
-    const endIdx   = Math.max(startIdx, freqToIndex(f2, sampleRate, fftSize));
-
-    const db        = avgPowerDb(data, startIdx, endIdx);
-    const intensity = clamp((db - floorDb) / (ceilDb - floorDb), 0, 1);
-
-    // Color scale: dark blue (silence) → cyan → green → yellow → red (loud)
-    // This maps directly to the heatmap style used in spectrum analysers
-    let r, g, b;
-    if (intensity < 0.25) {
-      // dark blue → blue
-      const t = intensity / 0.25;
-      r = 0; g = Math.round(t * 80); b = Math.round(100 + t * 155);
-    } else if (intensity < 0.5) {
-      // blue → cyan → green
-      const t = (intensity - 0.25) / 0.25;
-      r = 0; g = Math.round(80 + t * 175); b = Math.round(255 * (1 - t));
-    } else if (intensity < 0.75) {
-      // green → yellow
-      const t = (intensity - 0.5) / 0.25;
-      r = Math.round(t * 255); g = 255; b = 0;
-    } else {
-      // yellow → red
-      const t = (intensity - 0.75) / 0.25;
-      r = 255; g = Math.round(255 * (1 - t)); b = 0;
+      sendToHardware(frameColors);
+      micAnimFrame = requestAnimationFrame(micLoop);
     }
 
-    // Write to both the LED strip and the spectrum bars simultaneously
-    setPixel(i, r, g, b);
-    setBar(i, r, g, b, intensity);
-  }
+    async function toggleMic() {
+      if (micActive) {
+        stopMicAnim(); stopMicHardware();
+        let flatColors = [];
+        for (let i = 0; i < N; i++) { setPixel(i, 0, 0, 0); setBar(i, 0, 0, 0, 0); flatColors.push(0, 0, 0); }
+        sendToHardware(flatColors);
+        setStatus('Mic stopped', 0, 0, 0);
+        document.getElementById('micBtn').textContent = 'Start mic';
+        document.getElementById('micBtn').classList.remove('active');
+        micActive = false;
+        return;
+      }
+      await startMic();
+    }
 
-  micAnimFrame = requestAnimationFrame(micLoop);
-}
+    function stopMicHardware() {
+      if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+      if (audioCtx) { audioCtx.close(); audioCtx = null; analyser = null; }
+    }
 
-// ─────────────────────────────────────────────
-// MIC TOGGLE BUTTON
-// ─────────────────────────────────────────────
+    async function startMic() {
+      try {
+        stopColorAnim(); stopMicAnim(); stopMicHardware();
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 4096;
+        analyser.smoothingTimeConstant = 0.75;
+        audioCtx.createMediaStreamSource(micStream).connect(analyser);
 
-async function toggleMic() {
-  if (micActive) {
-    stopMicAnim();
-    stopMicHardware();
-    for (let i = 0; i < N; i++) { setPixel(i, 0, 0, 0); setBar(i, 0, 0, 0, 0); }
-    setStatus('Mic stopped', 0, 0, 0);
-    document.getElementById('micBtn').textContent = 'Start mic';
-    document.getElementById('micBtn').classList.remove('active');
-    micActive = false;
-    return;
-  }
-  await startMic();
-}
+        micActive = true;
+        document.getElementById('micBtn').textContent = 'Stop mic';
+        document.getElementById('micBtn').classList.add('active');
+        setStatus('Microphone active — listening', 80, 200, 100);
 
-function stopMicHardware() {
-  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
-  if (audioCtx)  { audioCtx.close(); audioCtx = null; analyser = null; }
-}
+        micAnimFrame = requestAnimationFrame(micLoop);
+      } catch (err) { console.error(err); setStatus('Mic error: check browser permissions', 220, 70, 70); }
+    }
 
-async function startMic() {
-  try {
-    stopColorAnim();
-    stopMicAnim();
-    stopMicHardware();
-
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = audioCtx.createAnalyser();
-
-    // FFT size: 4096 = good balance of frequency resolution and speed
-    analyser.fftSize               = 4096;
-    // Smoothing: 0.75 gives a fluid, readable display without lag
-    analyser.smoothingTimeConstant = 0.75;
-    // These are only used as fallback; the slider overrides them in micLoop()
-    analyser.minDecibels           = -90;
-    analyser.maxDecibels           = -10;
-
-    audioCtx.createMediaStreamSource(micStream).connect(analyser);
-
-    micActive = true;
-    document.getElementById('micBtn').textContent = 'Stop mic';
-    document.getElementById('micBtn').classList.add('active');
-    setStatus('Microphone active — listening', 80, 200, 100);
-
-    micAnimFrame = requestAnimationFrame(micLoop);
-  } catch (err) {
-    console.error(err);
-    setStatus('Mic error: ' + err.name + ' — check browser permissions', 220, 70, 70);
-  }
-}
-
-// ─────────────────────────────────────────────
-// SENSITIVITY SLIDER
-// ─────────────────────────────────────────────
-
-const slider = document.getElementById('sensitivitySlider');
-const sliderLabel = document.getElementById('sensitivityLabel');
-slider.addEventListener('input', () => {
-  sliderLabel.textContent = slider.value + ' dB';
-});
-
-// ─────────────────────────────────────────────
-// BOOT
-// ─────────────────────────────────────────────
-
-setMode('rainbow');
-</script>
+    document.getElementById('sensitivitySlider').addEventListener('input', (e) => {
+      document.getElementById('sensitivityLabel').textContent = e.target.value + ' dB';
+    });
+  </script>
 </body>
+
 </html>
