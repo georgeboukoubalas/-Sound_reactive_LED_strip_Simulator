@@ -50,7 +50,6 @@ This project uses a "Smart Brain / Dumb Monitor" architecture:
 
 *⚠️ Note: You must use **Google Chrome** or **Microsoft Edge**. Safari and Firefox do not currently support the Web Serial API.*
 
-```bash
 # Clone the repository
 git clone [https://github.com/georgeboukoubalas/-Sound_reactive_LED_strip_Simulator.git](https://github.com/georgeboukoubalas/-Sound_reactive_LED_strip_Simulator.git)
 
